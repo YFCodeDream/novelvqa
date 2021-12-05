@@ -1,8 +1,10 @@
-from cfgs.path_cfgs import PATH
-
-import torch, random
-import numpy as np
 from types import MethodType
+
+import numpy as np
+import random
+import torch
+
+from cfgs.path_cfgs import PATH
 
 
 class Cfgs(PATH):
