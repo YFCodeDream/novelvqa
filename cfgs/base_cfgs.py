@@ -7,9 +7,16 @@ import torch
 from cfgs.path_cfgs import PATH
 
 
+# noinspection PyMethodMayBeStatic
 class Cfgs(PATH):
+    """
+    配置类，在这个类里封装各种配置信息
+    继承了封装路径信息的类
+    """
     def __init__(self):
         super(Cfgs, self).__init__()
+
+        # 设备配置
 
         # Set Devices
         # If use multi-gpu training, set e.g.'0, 1, 2' instead
@@ -22,21 +29,23 @@ class Cfgs(PATH):
         # ---- Version Control ----
         # -------------------------
 
-        # Define a specific name to start new training
+        # Define a specific name to start new training 为新训练定义一个新的名称
         # self.VERSION = 'Anonymous_' + str(self.SEED)
         self.VERSION = str(self.SEED)
 
-        # Resume training
+        # Resume training 重新开始训练
         self.RESUME = False
 
-        # Used in Resume training and testing
+        # Used in Resume training and testing 在重新训练和测试中使用
         self.CKPT_VERSION = self.VERSION
         self.CKPT_EPOCH = 0
 
         # Absolutely checkpoint path, 'CKPT_VERSION' and 'CKPT_EPOCH' will be overridden
+        # 检查点的路径，CKPT_VERSION CKPT_EPOCH被重写
         self.CKPT_PATH = None
 
         # Print loss every step
+        # 在每一步打印输出
         self.VERBOSE = True
 
         # ------------------------------
@@ -44,16 +53,21 @@ class Cfgs(PATH):
         # ------------------------------
 
         # {'train', 'val', 'test'}
+        # 三种模式，train, val, test
         self.RUN_MODE = 'train'
 
         # Set True to evaluate offline
+        # 离线评估时设置为True
         self.EVAL_EVERY_EPOCH = True
 
         # Set True to save the prediction vector (Ensemble)
+        # 保存预测向量设为true
         self.TEST_SAVE_PRED = False
 
         # Define the 'train' 'val' 'test' data split
+        # 定义train, val, test的数据划分
         # (EVAL_EVERY_EPOCH triggered when set {'train': 'train'})
+        # 设置{'train': 'train'}时，EVAL_EVERY_EPOCH被触发
         self.SPLIT = {
             'train': '',
             'val': 'val',
@@ -62,27 +76,33 @@ class Cfgs(PATH):
         }
 
         # A external method to set train split
+        # 设置训练划分的外部方法
         self.TRAIN_SPLIT = 'train+val+vg'
 
         # Set True to use pretrained word embedding
+        # 使用预训练的词嵌入时设置为True
         # (GloVe: spaCy https://spacy.io/)
         self.USE_GLOVE = True
 
         # Word embedding matrix size
+        # 词嵌入的输出维度
         # (token size x WORD_EMBED_SIZE)
         self.WORD_EMBED_SIZE = 300
 
         # Max length of question sentences
+        # 问题句子的最大长度
         self.MAX_TOKEN = 14
 
         # Filter the answer by occurrence
         # self.ANS_FREQ = 8
 
         # Max length of extracted faster-rcnn 2048D features
+        # faster-rcnn提取特征（2048维）的最大长度
         # (bottom-up and Top-down: https://github.com/peteanderson80/bottom-up-attention)
         self.IMG_FEAT_PAD_SIZE = 100
 
         # Faster-rcnn 2048D features
+        # faster-rcnn提取的特征维数
         self.IMG_FEAT_SIZE = 2048
 
         self.IMG_SPATIAL_FEAT_SIZE = 7
@@ -110,24 +130,30 @@ class Cfgs(PATH):
         # ------------------------
         # ---- Network Params ----
         # ------------------------
+        # 网络参数
 
         # Model deeps
         # (Encoder and Decoder will be same deeps)
+        # 模型深度，编码器和解码器有同样的深度
         self.LAYER = 6
 
         # Model hidden size
+        # 隐层的size
         # (512 as default, bigger will be a sharp increase of gpu memory usage)
         self.HIDDEN_SIZE = 512
 
         # Multi-head number in MCA layers
-        # (Warning: HIDDEN_SIZE should be divided by MULTI_HEAD)
+        # Modular Co-Attention 模块化共同注意中multi-head的数量
+        # (Warning: HIDDEN_SIZE should be divided by MULTI_HEAD) HIDDEN_SIZE应该被MULTI_HEAD整除
         self.MULTI_HEAD = 8
 
         # Dropout rate for all dropout layers
+        # 所有的dropout率
         # (dropout can prevent overfitting： [Dropout: a simple way to prevent neural networks from overfitting])
         self.DROPOUT_R = 0.1
 
         # MLP size in flatten layers
+        # 展平的线性层的size
         self.FLAT_MLP_SIZE = 512
 
         # Flatten the last hidden to vector with {n} attention glimpses
@@ -161,6 +187,9 @@ class Cfgs(PATH):
         self.OPT_EPS = 1e-9
 
     def parse_to_dict(self, args):
+        """
+        将定义的属性转换成字典
+        """
         args_dict = {}
         for arg in dir(args):
             if not arg.startswith('_') and not isinstance(getattr(args, arg), MethodType):
