@@ -15,12 +15,18 @@ import random
 
 
 class Execution:
+    """
+    配置信息中RUN_MODE不为valNovel
+    不在新子集上计算验证精度时，模型操作的封装类
+    """
     def __init__(self, __C):
+        # 导入配置信息，包括命令行参数以及BERT模型参数
         self.__C = __C
 
         print('Loading training set ........')
 
         if __C.CONCEPT is not None or __C.SKILL is not None:  # take out novel concept/skill from training
+            # 在训练时学习新技能/概念
             setattr(__C, 'NOVEL', 'remove')
         else:
             setattr(__C, 'NOVEL', 'get_ids')

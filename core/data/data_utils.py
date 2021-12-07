@@ -3,10 +3,11 @@ from core.data.ans_punct import prep_ans
 from core.data.save_glove_embeds import StoredEmbeds
 import numpy as np
 import random, re, json
+# noinspection PyProtectedMember
 from torch.utils.data._utils.collate import default_collate
 
-
 try:
+    # noinspection PyUnresolvedReferences
     import en_vectors_web_lg
 except ImportError:
     import spacy
@@ -26,11 +27,15 @@ def load_json(fname):
         data_ = json.load(f)
     return data_
 
+
 # ------------------------------
 # ---- Initialization Utils ----
 # ------------------------------
 
 def img_feat_path_load(path_list):
+    """
+    返回一个字典，key-value：图像编号-图像路径
+    """
     iid_to_path = {}
 
     for ix, path in enumerate(path_list):
@@ -54,6 +59,9 @@ def img_feat_load(path_list):
 
 
 def ques_load(ques_list):
+    """
+    返回字典 key-value：问题编号-问题
+    """
     qid_to_ques = {}
 
     for ques in ques_list:
@@ -72,9 +80,13 @@ def get_words(question_str):
 
 
 def tokenize(stat_ques_list, use_glove, save_embeds=False):
+    """
+    用Glove进行word embedding，传入的use_glove必须为True
+    """
     # This function basically requires use_glove to be true in order to work correctly.
-    # Otherwise, the indicies in token_to_ix don't match the actual embedding matrix.
+    # Otherwise, the indices in token_to_ix don't match the actual embedding matrix.
 
+    # 定义一些特殊字符 PAD：空格；UNK：未知字符；[MASK]：掩盖代号；[CLS]：分类符
     token_to_ix = {
         'PAD': 0,
         'UNK': 1,
@@ -232,7 +244,6 @@ def proc_ans(ans, ans_to_ix):
 
 
 def refset_collate(batch):
-
     tgt, refs, label, pos, qid_data = zip(*batch)
 
     tgt, label, pos = default_collate(tgt), default_collate(label), default_collate(pos)
@@ -246,7 +257,6 @@ def refset_collate(batch):
         ref_i_batched = default_collate(ref_i_all)
         batched_refs.append(ref_i_batched)
 
-
     return tgt, batched_refs, label, pos, qid_data
 
 
@@ -254,7 +264,7 @@ def refset_tocuda(refset_data):
     tgt, batched_refs, label, pos, qid_data = refset_data
     label, pos = label.cuda(), pos.cuda()
 
-    tgt = (tgt[0].cuda(),tgt[1].cuda(), tgt[2].cuda())
+    tgt = (tgt[0].cuda(), tgt[1].cuda(), tgt[2].cuda())
 
     if all(len(x) for x in batched_refs):
         batched_refs = [(x[0].cuda(), x[1].cuda(), x[2].cuda()) for x in batched_refs]
@@ -288,7 +298,7 @@ def refset_point_refset_index(question_list, max_token, novel_indices=None, aug_
                     rs_idx.append((qidx, c))
 
                     if is_novel[qidx]:
-                        for _ in range(aug_factor-1):
+                        for _ in range(aug_factor - 1):
                             rs_idx.append((qidx, c))
                             count_novel += 1
 
@@ -333,7 +343,8 @@ def do_token_masking(token_id, token_to_ix, mask_mode):
                 masked_token_id = token_id
             # 10% of the time, replace with random word
             else:
-                masked_token_id = random.randint(4, len(token_to_ix) - 1)  # start at 4 to account for PAD, UNK, MASK, CLS
+                masked_token_id = random.randint(4,
+                                                 len(token_to_ix) - 1)  # start at 4 to account for PAD, UNK, MASK, CLS
     elif mask_mode == 'even':
         if random.random() <= 0.5:
             masked_token_id = token_to_ix['[MASK]']
@@ -347,6 +358,7 @@ def do_token_masking(token_id, token_to_ix, mask_mode):
     return masked_token_id
 
 
+# noinspection PyPep8Naming,PyShadowingBuiltins
 def filter_concept_skill(ques_list, ans_list, concept, skill):
     N, N_ans = len(ques_list), len(ans_list)
     assert N == N_ans
@@ -354,7 +366,8 @@ def filter_concept_skill(ques_list, ans_list, concept, skill):
     novel_ques_ids, novel_indices = get_novel_ids(ques_list, concept, skill)
 
     count = 0
-    for id in reversed(novel_indices): # going back to front, delete novel idx
+    for id in reversed(novel_indices):  # going back to front, delete novel idx
+        # 通过逆序索引，逐个删除新出现的问题答案对
         del ques_list[id]
         del ans_list[id]
         count += 1
@@ -363,36 +376,48 @@ def filter_concept_skill(ques_list, ans_list, concept, skill):
     print('New dataset size is {x}'.format(x=len(ques_list)))
 
 
+# noinspection PyPep8Naming
 def get_novel_ids(ques_list, concept, skill):
+    # 新的编号，新的索引
     novel_ids, novel_indices = [], []
-    if not concept: return novel_ids, novel_indices
+    if not concept:
+        # 如果concept为None，返回两个空列表，没有新编号和索引
+        return novel_ids, novel_indices
 
     if isinstance(concept, str):
+        # concept是字符串格式，以,为分隔符
         concept = concept.split(',')
 
+    # 转换为集合去重
     concept_set = set(concept)
 
+    # N是问题数
     N = len(ques_list)
 
     for i in range(N):
         ques = ques_list[i]
 
+        # 这里猜测ques_list是个字典组成的列表
         if 'all_concepts' not in ques:
+            # all_concepts不在当前取出的ques的keys里，就取concepts对应的值至curr_concepts
             curr_concepts = set(ques['concepts'])
         else:
             curr_concepts = set(ques['all_concepts'])
 
+        # 是否找到当前概念
         found_concept = bool(len(concept_set & curr_concepts))
 
         if not found_concept:
+            # found_concept为False，未找到当前概念
             continue
 
         if (skill is None or skill.lower() == 'none') or ques['skill'] == skill:
-            # Found a match, add question id
+            # skill为空/当前ques对应的skill是当前skill值
+            # Found a match, add question id 找到一组匹配，保存问题的编号和索引
             novel_ids.append(ques['question_id'])
             novel_indices.append(i)
 
-    print('Found {x} number of novel question ids'.format(x= len(novel_ids)))
+    print('Found {x} number of novel question ids'.format(x=len(novel_ids)))
     return novel_ids, novel_indices
 
 

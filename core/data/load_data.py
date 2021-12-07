@@ -7,25 +7,33 @@ from core.data.data_utils import build_skill_references, sample_contrasting_skil
 import numpy as np
 import random
 import glob, json, torch
+# noinspection PyPep8Naming
 import torch.utils.data as Data
 
 
 class DataSet(Data.Dataset):
     def __init__(self, __C):
+        # 加载Cfgs配置类
         self.__C = __C
 
         # Loading all image paths
+        # 加载所有图像路径
         self.img_feat_path_list = []
+        # 分离出图像数据集标签，e.g. RUN_MODE为train+val+test
         img_split_list = __C.SPLIT[__C.RUN_MODE].split('+')
 
         if self.__C.VQACP:
+            # VQA-CP从VQA v2/v1构建具有不同答案分布的train-test划分（Sec.3 Comparison to Existing  
             img_split_list = ['train', 'val']
 
         for split in img_split_list:
             if split in ['train', 'val', 'test']:
+                # 构建train, val, test的数据路径
                 self.img_feat_path_list += glob.glob(__C.IMG_FEAT_PATH[split] + '*.npz')
 
         # Loading question word list
+        # 加载问题词汇表
+        # QUESTION_PATH在base_cfgs.py的fix_and_add_args和path_cfgs.py的init_path定义
         stat_ques_list = \
             json.load(open(__C.QUESTION_PATH['train'], 'r'))['questions'] + \
             json.load(open(__C.QUESTION_PATH['val'], 'r'))['questions'] + \
@@ -33,13 +41,16 @@ class DataSet(Data.Dataset):
             json.load(open(__C.QUESTION_PATH['vg'], 'r'))['questions']
 
         # Loading question and answer list
+        # 加载问题和答案列表
         self.ques_list = []
         self.ans_list = []
 
         split_list = __C.SPLIT[__C.RUN_MODE].split('+')
         for split in split_list:
+            # 从RUN_MODE里加载问题到ques_list
             self.ques_list += json.load(open(__C.QUESTION_PATH[split], 'r'))['questions']
             if __C.RUN_MODE in ['train', 'vqaAccRegion', 'evalAll']:
+                # 如果RUN_MODE是'train', 'vqaAccRegion', 'evalAll'中的模式，则加载答案至ans_list变量
                 self.ans_list += json.load(open(__C.ANSWER_PATH[split], 'r'))['annotations']
 
         self.rs_idx = []
@@ -50,28 +61,36 @@ class DataSet(Data.Dataset):
         # ------------------------
 
         # {image id} -> {image feature absolutely path}
+        # iid_to_img_feat_path：图像编号-图像绝对路径 的字典
         self.iid_to_img_feat_path = img_feat_path_load(self.img_feat_path_list)
 
         self.novel_ques_ids = None
+        # 在exec2steps.py中line 30-32设置self.__C.NOVEL
+        # 在train的时候学习新技能-概念
+        # NOVEL在CONCEPT或者SKILL不为None时为remove
         if self.__C.NOVEL == 'remove' and self.__C.RUN_MODE == 'train':
             filter_concept_skill(self.ques_list, self.ans_list, concept=self.__C.CONCEPT, skill=self.__C.SKILL)
         elif self.__C.NOVEL == 'get_ids' and self.__C.RUN_MODE == 'val':
+            # 只取ques_id
             self.novel_ques_ids, _ = \
                 get_novel_ids(self.ques_list, concept=self.__C.CONCEPT, skill=self.__C.SKILL)
         else:
+            # ques_id和索引均保留
             self.novel_ques_ids, self.novel_indices = \
                 get_novel_ids(self.ques_list, concept=self.__C.CONCEPT, skill=self.__C.SKILL)
 
-
         # Define run data size
         if __C.RUN_MODE in ['train']:
+            # 如果RUN_MODE为训练模式，设置数据大小为答案集的大小
             self.data_size = self.ans_list.__len__()
         else:
+            # 否则设置为问题集的大小
             self.data_size = self.ques_list.__len__()
 
         print('== Dataset size:', self.data_size)
 
         # {question id} -> {question}
+        # qid_to_ques：字典 问题编号-问题
         self.qid_to_ques = ques_load(self.ques_list)
 
         # Tokenize
@@ -207,7 +226,7 @@ class RefPointDataSet(DataSet):
 
 
 class SkillContrastDataSet(DataSet):
-    def __init__(self,  __C):
+    def __init__(self, __C):
         super().__init__(__C)
 
         print('Building skill references...')

@@ -77,6 +77,7 @@ class Cfgs(PATH):
 
         # A external method to set train split
         # 设置训练划分的外部方法
+        # 在proc里将SPLIT['train']设置为此值 在load_data.py的Dataset类里用到 line 23
         self.TRAIN_SPLIT = 'train+val+vg'
 
         # Set True to use pretrained word embedding

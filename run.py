@@ -222,12 +222,15 @@ if __name__ == '__main__':
     __C.check_path()
 
     if __C.RUN_MODE == 'valNovel':
+        # 在新子集计算验证精度
         print('Compute validation accuracy on novel subsets')
         execution = NovelEval(__C)
     else:
         if __C.USE_GROUNDING:
+            # 使用技能-概念组合
             print('Use 2-step Loss')
         else:
+            # 仅使用VQA loss
             print('No grounding loss')
         execution = Exec2Steps(__C)
 
