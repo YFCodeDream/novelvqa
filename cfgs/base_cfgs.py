@@ -7,7 +7,7 @@ import torch
 from cfgs.path_cfgs import PATH
 
 
-# noinspection PyMethodMayBeStatic
+# noinspection PyMethodMayBeStatic,PyAttributeOutsideInit
 class Cfgs(PATH):
     """
     配置类，在这个类里封装各种配置信息
@@ -120,6 +120,7 @@ class Cfgs(PATH):
 
         # Large model can not training with batch size 64
         # Gradient accumulate can split batch to reduce gpu memory usage
+        # large模型不能以batch size为64训练，梯度累积可以划分batch，减少GPU消耗
         # (Warning: BATCH_SIZE should be divided by GRAD_ACCU_STEPS)
         self.GRAD_ACCU_STEPS = 1
 
@@ -167,15 +168,19 @@ class Cfgs(PATH):
         # --------------------------
 
         # The base learning rate
+        # 基础学习率
         self.LR_BASE = 0.0001
 
         # Learning rate decay ratio
+        # 学习率衰减比例
         self.LR_DECAY_R = 0.2
 
         # Learning rate decay at {x, y, z...} epoch
+        # 在10，12个epoch执行衰减
         self.LR_DECAY_LIST = [10, 12]
 
         # Max training epoch
+        # 最大训练轮数
         self.MAX_EPOCH = 13
 
         # Gradient clip
@@ -199,10 +204,14 @@ class Cfgs(PATH):
         return args_dict
 
     def add_args(self, args_dict):
+        """
+        添加属性
+        """
         for arg in args_dict:
             setattr(self, arg, args_dict[arg])
 
     def fix_and_add_args(self, args_dict):
+        # 设置问题和答案的路径
         print('Manually fix question paths for reference sets ...')
 
         self.QUESTION_PATH['train'] = './datasets/vqa/train2014_scr_questions.json'
@@ -221,15 +230,20 @@ class Cfgs(PATH):
             setattr(self, arg, args_dict[arg])
 
     def proc(self):
+        # 确保RUN_MODE为train/val/test/valNovel
         assert self.RUN_MODE in ['train', 'val', 'test', 'valNovel']
 
-        # ------------ Devices setup
+        # ------------ Devices setup 设置设备信息
         # os.environ['CUDA_VISIBLE_DEVICES'] = self.GPU
+        # GPU数
         self.N_GPU = len(self.GPU.split(','))
+        # 设备列表
         self.DEVICES = [_ for _ in range(self.N_GPU)]
+        # 线程数为2
         torch.set_num_threads(2)
 
         # ------------ Seed setup
+        # 设置随机种子
         # fix pytorch seed
         torch.manual_seed(self.SEED)
         if self.N_GPU < 2:
@@ -244,6 +258,7 @@ class Cfgs(PATH):
         # fix random seed
         random.seed(self.SEED)
 
+        # 如果设置了检查点路径，则生成CKPT_VERSION
         if self.CKPT_PATH is not None:
             print('Warning: you are now using CKPT_PATH args, '
                   'CKPT_VERSION and CKPT_EPOCH will not work')
@@ -251,25 +266,31 @@ class Cfgs(PATH):
 
         # ------------ Split setup
         self.SPLIT['train'] = self.TRAIN_SPLIT
+        # 当前模式处于验证集/没有设置train，不在每一轮后进行评估
         if 'val' in self.SPLIT['train'].split('+') or self.RUN_MODE not in ['train']:
             self.EVAL_EVERY_EPOCH = False
 
+        # 没有设置test，不保存预测向量
         if self.RUN_MODE not in ['test']:
             self.TEST_SAVE_PRED = False
 
         # ------------ Gradient accumulate setup
+        # 保证batch size能被梯度累积的步数整除，每一个分批次大小就是batch size除以梯度累积的步数
         assert self.BATCH_SIZE % self.GRAD_ACCU_STEPS == 0
         self.SUB_BATCH_SIZE = int(self.BATCH_SIZE / self.GRAD_ACCU_STEPS)
 
         # Use a small eval batch will reduce gpu memory usage
+        # 使用小的评估batch
         self.EVAL_BATCH_SIZE = int(self.SUB_BATCH_SIZE / 2)
 
         # ------------ Networks setup
         # FeedForwardNet size in every MCA layer
+        # 在每一个MCA层的前馈网络的size
         self.FF_SIZE = int(self.HIDDEN_SIZE * 4)
 
         # A pipe line hidden size in attention compute
         assert self.HIDDEN_SIZE % self.MULTI_HEAD == 0
+        # multi-head attention中每一个head对应的维度
         self.HIDDEN_SIZE_HEAD = int(self.HIDDEN_SIZE / self.MULTI_HEAD)
 
     def __str__(self):

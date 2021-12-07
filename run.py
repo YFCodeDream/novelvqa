@@ -195,18 +195,25 @@ def parse_args():
 if __name__ == '__main__':
     __C = Cfgs()
 
+    # 获取命令行参数
     args = parse_args()
+    # 将其转换为字典类型
     args_dict = __C.parse_to_dict(args)
 
     print(args)
 
+    # 根据传入的MODEL命令行参数，选择large模型还是small模型
+    # 加载对应的large_model.yml和small_model.yml
     cfg_file = "cfgs/{}_model.yml".format(args.MODEL)
     with open(cfg_file, 'r') as f:
         yaml_dict = yaml.load(f)
 
+    # 将命令行参数和yml中BERT模型参数合并为一个参数字典
     args_dict = {**yaml_dict, **args_dict}
+    # 添加配置信息
     __C.add_args(args_dict)
     __C.fix_and_add_args(args_dict)
+    # 设备，模型配置初始化
     __C.proc()
 
     print('Hyper Parameters:')

@@ -9,6 +9,7 @@ from utils.vqaEval import VQAEval
 import os, json, torch, datetime, pickle, copy, shutil, time
 import numpy as np
 import torch.nn as nn
+# noinspection PyPep8Naming
 import torch.utils.data as Data
 import random
 
@@ -19,8 +20,7 @@ class Execution:
 
         print('Loading training set ........')
 
-
-        if __C.CONCEPT is not None or __C.SKILL is not None: # take out novel concept/skill from training
+        if __C.CONCEPT is not None or __C.SKILL is not None:  # take out novel concept/skill from training
             setattr(__C, 'NOVEL', 'remove')
         else:
             setattr(__C, 'NOVEL', 'get_ids')
@@ -294,7 +294,6 @@ class Execution:
                             target_tokens = output[1]
                             target_mask = output[2].squeeze(2).squeeze(1)
 
-
                         # -------------- Compute skill loss  -------------- #
 
                         refs_tokens = []
@@ -326,7 +325,7 @@ class Execution:
                     optim.step()
 
             time_end = time.time()
-            print('Finished in {}s'.format(int(time_end-time_start)))
+            print('Finished in {}s'.format(int(time_end - time_start)))
 
             epoch_finish = epoch + 1
 
@@ -539,7 +538,8 @@ class Execution:
             vqaRes = vqa.loadRes(result_eval_file, ques_file_path)
 
             # create vqaEval object by taking vqa and vqaRes
-            vqaEval = VQAEval(vqa, vqaRes, n=2)  # n is precision of accuracy (number of places after decimal), default is 2
+            vqaEval = VQAEval(vqa, vqaRes,
+                              n=2)  # n is precision of accuracy (number of places after decimal), default is 2
 
             # evaluate results
             """
@@ -637,7 +637,3 @@ class Execution:
             os.remove(self.__C.LOG_PATH + 'log_run_' + version + '.txt')
         print('Finished!')
         print('')
-
-
-
-
