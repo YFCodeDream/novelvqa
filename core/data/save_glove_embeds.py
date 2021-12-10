@@ -10,6 +10,9 @@ QTokenEmbed = namedtuple('QToken', ['text', 'vector'])
 
 
 class StoredEmbeds(object):
+    """
+    保存word embedding的类
+    """
     def __init__(self, embed_fname='./ckpts/glove_embeds.pkl'):
         self.embed_fname = embed_fname
         self._embeddings = []

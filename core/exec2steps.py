@@ -31,9 +31,12 @@ class Execution:
         else:
             setattr(__C, 'NOVEL', 'get_ids')
 
+        # 根据传入的配置信息，初始化数据集
         self.dataset = DataSet(__C)
 
         if self.__C.USE_GROUNDING:
+            # 使用了本文提出的concept grounding
+            # 拷贝一份封装的配置类
             __C_ref = copy.deepcopy(__C)
             setattr(__C_ref, 'NOVEL', 'augment')
             self.refdataset = RefPointDataSet(__C_ref)

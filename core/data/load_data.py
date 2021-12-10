@@ -97,6 +97,7 @@ class DataSet(Data.Dataset):
         self.token_to_ix, self.pretrained_emb = tokenize(
             stat_ques_list,
             __C.USE_GLOVE,
+            # 只有train的时候才保存
             save_embeds=(self.__C.RUN_MODE in {'train'})  # Embeddings will not be overwritten if file already exists.
         )
         self.token_size = self.token_to_ix.__len__()
@@ -104,6 +105,7 @@ class DataSet(Data.Dataset):
 
         # Answers stats
         # self.ans_to_ix, self.ix_to_ans = ans_stat(self.stat_ans_list, __C.ANS_FREQ)
+        # 从json数据里加载答案数据
         self.ans_to_ix, self.ix_to_ans = ans_stat('core/data/answer_dict.json')
         self.ans_size = self.ans_to_ix.__len__()
         print('== Answer vocab size (occurr more than {} times):'.format(8), self.ans_size)
@@ -157,15 +159,20 @@ class DataSet(Data.Dataset):
 
 
 class RefPointDataSet(DataSet):
+    """
+    参考集类，包含一类正例和两类负例
+    """
     def __init__(self, __C):
         super().__init__(__C)
         self.__C = __C
 
         self.refset_sizes = list(zip(['pos', 'neg1', 'neg2'], [1, 1, 1]))
 
+        # 裁剪问题列表
         self.ques_list = prune_refsets(self.ques_list, self.refset_sizes, self.__C.MAX_TOKEN)
 
         if not self.rs_idx:
+            # 参考集索引rs_idx为空
             self.rs_idx = refset_point_refset_index(
                 self.ques_list,
                 self.__C.MAX_TOKEN,
@@ -186,7 +193,7 @@ class RefPointDataSet(DataSet):
 
         random.shuffle(all_cand_idx)
 
-        # This assumes that there is only one positive example
+        # This assumes that there is only one positive example 假定只有一个正例
         data_ref = []
         point_positions = []
         ref_qids = []

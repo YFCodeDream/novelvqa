@@ -82,6 +82,7 @@ def get_words(question_str):
 def tokenize(stat_ques_list, use_glove, save_embeds=False):
     """
     用Glove进行word embedding，传入的use_glove必须为True
+    使用spacy工具和en_vectors_web_lg
     """
     # This function basically requires use_glove to be true in order to work correctly.
     # Otherwise, the indices in token_to_ix don't match the actual embedding matrix.
@@ -112,6 +113,7 @@ def tokenize(stat_ques_list, use_glove, save_embeds=False):
         mu = 0.
         sigma = np.sqrt(1. / known_vec.shape[0])
 
+        # 特殊字符的嵌入
         pretrained_emb.append(spacy_tool('PAD').vector)
         pretrained_emb.append(spacy_tool('UNK').vector)
         pretrained_emb.append(
@@ -122,10 +124,12 @@ def tokenize(stat_ques_list, use_glove, save_embeds=False):
         )  # Embedding for [CLS]
 
     for ques in stat_ques_list:
+        # words是一个列表
         words = get_words(ques['question'])
 
         for word in words:
             if word not in token_to_ix:
+                # 将没见过的词添加到token_to_ix的label-encoding的词典中
                 token_to_ix[word] = len(token_to_ix)
                 if use_glove:
                     pretrained_emb.append(spacy_tool(word).vector)
@@ -273,12 +277,14 @@ def refset_tocuda(refset_data):
 
 
 def refset_point_refset_index(question_list, max_token, novel_indices=None, aug_factor=1):
-    # This assumes that each concept only appears once in the question.
+    # This assumes that each concept only appears once in the question. 每个概念仅在问题中出现一次
     # If this is a bad assumption, then we need to iterate over question['concepts']
 
     n_questions = len(question_list)
+    # 初始化新问题的判别列表
     is_novel = [False for _ in range(n_questions)]
     if novel_indices:
+        # 如果没有传入新问题的索引，则初始化所有问题为新问题
         for x in novel_indices:
             is_novel[x] = True
 
@@ -286,9 +292,12 @@ def refset_point_refset_index(question_list, max_token, novel_indices=None, aug_
     count_novel = 0
     for qidx, question in enumerate(question_list):
         if question.get('refsets', None):
+            # 如果当前问题有参考集
+            # c是concept
             for c, crefs in question['refsets'].items():
                 has_refs = True
                 for dkey, vals in crefs.items():
+                    # len(vals['index']) == 0 or len(vals['question_id']) == 0
                     if not len(vals['index']) or not len(vals['question_id']):
                         has_refs = False
                         break
@@ -308,12 +317,17 @@ def refset_point_refset_index(question_list, max_token, novel_indices=None, aug_
 
 
 def prune_refsets(question_list, refset_sizes, max_token):
+    """
+    refset_sizes: list(zip(['pos', 'neg1', 'neg2'], [1, 1, 1]))
+    """
     for question in question_list:
         if question.get('refsets', None):
+            # 如果当前问题有参考集
             for c, crefs in question['refsets'].items():
                 for dkey, _ in refset_sizes:
                     for i, idx in reversed(list(enumerate(crefs[dkey]['index']))):
                         if len(get_words(question_list[idx]['question'])) > max_token:
+                            # 超过MAX_TOKEN部分将其删除
                             crefs[dkey]['index'].pop(i)
                             crefs[dkey]['question_id'].pop(i)
 
