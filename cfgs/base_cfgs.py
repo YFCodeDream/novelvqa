@@ -20,7 +20,7 @@ class Cfgs(PATH):
 
         # Set Devices
         # If use multi-gpu training, set e.g.'0, 1, 2' instead
-        self.GPU = '0'
+        self.GPU = 'cuda:0'
 
         # Set RNG For CPU And GPUs
         self.SEED = random.randint(0, 99999999)
@@ -109,10 +109,11 @@ class Cfgs(PATH):
         self.IMG_SPATIAL_FEAT_SIZE = 7
 
         # Default training batch size: 64
-        self.BATCH_SIZE = 64
+        self.BATCH_SIZE = 32
 
         # Multi-thread I/O
-        self.NUM_WORKERS = 8
+        # self.NUM_WORKERS = 8
+        self.NUM_WORKERS = 0
 
         # Use pin memory
         # (Warning: pin memory can accelerate GPU loading but may

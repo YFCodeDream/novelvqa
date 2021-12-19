@@ -6,6 +6,10 @@ from cfgs.base_cfgs import Cfgs
 from core.eval_novel import Execution as NovelEval
 from core.exec2steps import Execution as Exec2Steps
 
+import os
+
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+
 
 def str2bool(v):
     """
@@ -206,7 +210,7 @@ if __name__ == '__main__':
     # 加载对应的large_model.yml和small_model.yml
     cfg_file = "cfgs/{}_model.yml".format(args.MODEL)
     with open(cfg_file, 'r') as f:
-        yaml_dict = yaml.load(f)
+        yaml_dict = yaml.safe_load(f)
 
     # 将命令行参数和yml中BERT模型参数合并为一个参数字典
     args_dict = {**yaml_dict, **args_dict}

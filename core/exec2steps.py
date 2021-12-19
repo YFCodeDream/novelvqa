@@ -281,6 +281,11 @@ class Execution:
                         refs_hiddens.append(r_hidden)
                         refs_masks.append(r_hidden_mask.squeeze(2).squeeze(1))
 
+                    # 在这里调用pointing_loss，调用CrossEntropyLoss
+                    # target的最大不能超过input的width
+
+                    print(point_positions)
+
                     loss_pointing = loss_fns.pointing_loss(
                         target_hiddens, refs_hiddens, refs_masks, mask_tok_pos, point_positions
                     )
@@ -292,6 +297,8 @@ class Execution:
                             sk_contloader_iter = iter(sk_contloader)
                             sk_cont_batch = next(sk_contloader_iter)
 
+                        # print(sk_cont_batch)
+                        # print("----------------------------------------------------------------")
                         target, refs, _, point_positions, _ = refset_tocuda(sk_cont_batch)
 
                         output = net(target[0], target[1])

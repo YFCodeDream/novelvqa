@@ -22,8 +22,9 @@ class DataSet(Data.Dataset):
         # 分离出图像数据集标签，e.g. RUN_MODE为train+val+test
         img_split_list = __C.SPLIT[__C.RUN_MODE].split('+')
 
-        if self.__C.VQACP:
-            # VQA-CP从VQA v2/v1构建具有不同答案分布的train-test划分（Sec.3 Comparison to Existing  
+        # if self.__C.VQACP:
+        if getattr(self.__C, "VQACP", None):
+            # VQA-CP从VQA v2/v1构建具有不同答案分布的train-test划分（Sec.3 Comparison to Existing
             img_split_list = ['train', 'val']
 
         for split in img_split_list:

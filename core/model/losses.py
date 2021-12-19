@@ -48,7 +48,7 @@ class Losses:
         n_refs = len(refs)
 
         row_id = torch.from_numpy(np.array(range(batch_size)))
-        masked_tok = tgt[row_id, point_mask_tok.squeeze(1)]  # batch_size x tok_dim
+        masked_tok = tgt[row_id.long(), point_mask_tok.squeeze(1)]  # batch_size x tok_dim
 
         all_ref_hiddens = torch.cat(refs, dim=1)
         all_ref_masks = torch.cat(ref_masks, dim=-1)
@@ -64,6 +64,21 @@ class Losses:
 
     def pointing_loss(self, tgt, refs, ref_masks, point_mask_tok, pos):
         logits, _ = self.get_pointing_scores(tgt, refs, ref_masks, point_mask_tok)
+
+        print(f'\nlogits: {logits}')
+        print(f'logits.shape: {logits.shape}')
+        print('-------------------------------------------------------------------')
+        # logits的shape是[32, 42]，32是batch size，那么pos的元素就应该小于42啊
+        # pos.squeeze(1):tensor([3132, 3132,    4,    1, 3134, 6267,    5,    6,    2, 6260,    2, 3132,
+        #         3131,    5,    5,    2, 3133,    1, 3136, 6260, 6265, 6260, 6261, 3134,
+        #         6261,   10,    2,    6,    3, 6263,    2, 6261], device='cuda:0')
+
+        # 测试：File "C:\Users\Administrator\anaconda3\envs\CT-py37\lib\site-packages\torch\nn\functional.py", line 2824, in cross_entropy
+        #     return torch._C._nn.cross_entropy_loss(input, target, weight, _Reduction.get_enum(reduction), ignore_index)
+        # IndexError: Target 3132 is out of bounds.
+        print(f'pos: {pos.squeeze(1)}')
+        print('-------------------------------------------------------------------')
+
         point_loss_ = self._point_loss(logits, pos.squeeze(1))
         return point_loss_
 
@@ -105,4 +120,8 @@ class Losses:
 
         sims_ = torch.div(sims_, self._skill_temp)
 
+        print(f'\nsims_: {sims_}')
+        print("--------------------------------------------------------------")
+        print(f'ref_labels: {ref_labels.squeeze(-1)}')
+        print("--------------------------------------------------------------")
         return self._skill_contrast_loss(sims_, ref_labels.squeeze(-1))

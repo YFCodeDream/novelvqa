@@ -266,6 +266,11 @@ def refset_collate(batch):
 
 def refset_tocuda(refset_data):
     tgt, batched_refs, label, pos, qid_data = refset_data
+
+    # label += 1
+
+    # print(f'label: {label}')
+    # print("---------------------------------------------")
     label, pos = label.cuda(), pos.cuda()
 
     tgt = (tgt[0].cuda(), tgt[1].cuda(), tgt[2].cuda())
